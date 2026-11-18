@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PRBS Scorecard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: dark hero band with one boxed score, a slim rule strip, then a 2x2 grid of benchmark cards; left-aligned, wide gutters. */
+:root{
+  --bg:#F3F5FA; --surface:#FFFFFF; --ink:#0E1630; --muted:#5A6482; --line:#D8DDEA;
+  --accent:#1E4DFF; --accent-ink:#FFFFFF; --accent-soft:#E7ECFF;
+  --sp-bg:#FFEBC9; --sp-ink:#7A4A00; --dis-bg:#E7ECFF; --dis-ink:#1636B8;
+  --hero-bg:#0E1630; --hero-fg:#F3F5FA; --hero-muted:#9AA6C8; --hero-accent:#7E9AFF; --hero-line:#2A3657;
+  --ok:#1B9E5A; --warn:#D98B00; --bad:#D23F3F;
+  --display:"Sora","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans","Helvetica Neue",Arial,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B1020; --surface:#131B33; --ink:#EEF1F8; --muted:#9AA6C8; --line:#283454;
+    --accent:#7E9AFF; --accent-ink:#0B1020; --accent-soft:#1B2650;
+    --sp-bg:#3B2C10; --sp-ink:#FFD58C; --dis-bg:#1B2650; --dis-ink:#A9BBFF;
+    --hero-bg:#070B18; --hero-fg:#EEF1F8; --hero-muted:#9AA6C8; --hero-accent:#8FA8FF; --hero-line:#222D4C;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B1020; --surface:#131B33; --ink:#EEF1F8; --muted:#9AA6C8; --line:#283454;
+  --accent:#7E9AFF; --accent-ink:#0B1020; --accent-soft:#1B2650;
+  --sp-bg:#3B2C10; --sp-ink:#FFD58C; --dis-bg:#1B2650; --dis-ink:#A9BBFF;
+  --hero-bg:#070B18; --hero-fg:#EEF1F8; --hero-muted:#9AA6C8; --hero-accent:#8FA8FF; --hero-line:#222D4C;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-0.01em}
+p{margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* ---------- hero ---------- */
+.hero{background:var(--hero-bg);color:var(--hero-fg)}
+.hero .wrap{padding-block:56px 48px;display:grid;grid-template-columns:minmax(260px,380px) 1fr;gap:40px;align-items:center}
+.hero .eyebrow{color:var(--hero-muted)}
+.scorebox{border:2px solid var(--hero-accent);border-radius:20px;padding:28px 28px 22px;background:linear-gradient(180deg,rgba(126,154,255,.10),rgba(126,154,255,0));position:relative}
+.scorebox .big{font-family:var(--display);font-weight:800;font-size:clamp(96px,14vw,150px);line-height:.9;letter-spacing:-0.05em;font-variant-numeric:tabular-nums;color:var(--hero-fg)}
+.scorebox .unit{font-family:var(--mono);font-size:13px;color:var(--hero-accent);letter-spacing:.1em;text-transform:uppercase;margin-top:14px}
+.scorebox .sub{color:var(--hero-muted);font-size:14px;margin-top:6px}
+.scale{margin-top:20px}
+.scale .bar{display:grid;grid-template-columns:60fr 10fr 10fr 10fr 10fr;gap:3px;height:8px}
+.scale .bar span{border-radius:3px;background:var(--hero-line)}
+.scale .bar span:nth-child(2){background:#5B6A94}.scale .bar span:nth-child(3){background:#6E82BB}
+.scale .bar span:nth-child(4){background:#8FA8FF}.scale .bar span:nth-child(5){background:#C7D3FF}
+.scale .ticks{display:grid;grid-template-columns:60fr 10fr 10fr 10fr 10fr;gap:3px;font-family:var(--mono);font-size:11px;color:var(--hero-muted);margin-top:6px}
+.scale .ticks span:first-child{text-align:left}.scale .ticks span{text-align:left}
+.hero h1{font-size:clamp(30px,4vw,44px);font-weight:700;line-height:1.12;margin-top:10px}
+.hero .lead{color:var(--hero-muted);font-size:17px;max-width:38em;margin-top:16px}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px;padding-top:24px;border-top:1px solid var(--hero-line)}
+.facts b{display:block;font-family:var(--display);font-size:22px;font-weight:700;color:var(--hero-fg)}
+.facts span{font-size:13px;color:var(--hero-muted)}
+.hero .formula{margin-top:22px;font-size:18px;color:var(--hero-fg)}
+.hero .formula mjx-container{color:var(--hero-fg)}
+
+/* ---------- rule strip ---------- */
+.rule{border-bottom:1px solid var(--line);background:var(--surface)}
+.rule .wrap{padding-block:26px}
+.rule h2{font-size:15px;font-weight:700}
+.rule p{color:var(--muted);font-size:14px;margin-top:6px}
+.rule .lead2{max-width:62em}
+.rules4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:18px}
+.rule .eq{margin-top:8px}
+
+/* ---------- cards ---------- */
+.cards .wrap{padding-block:48px 24px}
+.cards h2.section{font-size:26px;font-weight:700}
+.cards .intro{color:var(--muted);margin-top:8px;max-width:62em}
+.stack{display:grid;gap:26px;margin-top:28px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:26px 28px 24px;min-width:0}
+.card .head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
+.card h3{font-size:24px;font-weight:700}
+.card .num{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.1em}
+.weight{flex:none;font-family:var(--mono);font-size:12px;font-weight:500;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:6px 11px;white-space:nowrap}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:28px;align-items:start}
+.col{display:flex;flex-direction:column;gap:18px;min-width:0}
+.block>.lbl{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.defbox{border:1.5px solid var(--accent);background:var(--accent-soft);border-radius:12px;padding:14px 16px}
+.defbox .lbl{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.defbox ul{margin:0;padding-left:18px;font-size:14.5px}
+.defbox li+li{margin-top:5px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:13px;border-radius:8px;padding:6px 10px;display:inline-flex;gap:8px;align-items:baseline;line-height:1.25}
+.chip.sp{background:var(--sp-bg);color:var(--sp-ink)}
+.chip.dis{background:var(--dis-bg);color:var(--dis-ink)}
+.chip .w{font-family:var(--mono);font-size:12px;opacity:.85}
+.mdefs{margin:0;display:grid;gap:7px;font-size:13.5px}
+.mdefs div{display:grid;grid-template-columns:minmax(110px,max-content) 1fr;gap:10px;border-top:1px solid var(--line);padding-top:7px}
+.mdefs div:first-child{border-top:0;padding-top:0}
+.mdefs dt{font-weight:600}
+.mdefs dd{margin:0;color:var(--muted)}
+/* weight tree */
+.wt{width:100%;border-collapse:collapse;font-size:14px}
+.wt td{padding:6px 0;border-top:1px solid var(--line);vertical-align:top}
+.wt tr:first-child td{border-top:0}
+.wt td.w{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;padding-left:12px;width:1%}
+.wt tr.part td{font-weight:600;padding-top:9px}
+.wt tr.part td.w{color:var(--accent)}
+.wt tr.sub td:first-child{padding-left:16px;color:var(--muted)}
+.wt tr.sub td.w{color:var(--muted)}
+.wt .def{display:block;color:var(--muted);font-size:12.5px;font-weight:400}
+.wt tr.total td{border-top:2px solid var(--ink);font-weight:700}
+/* metric x class matrix */
+.mx{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.mx th,.mx td{padding:6px 6px;text-align:center;border-top:1px solid var(--line)}
+.mx th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--muted);font-weight:500;border-top:0}
+.mx td:first-child,.mx th:first-child{text-align:left;padding-left:0}
+.mx td{font-family:var(--mono)}
+.mx td:first-child{font-family:var(--body)}
+.mx tr.sum td{border-top:2px solid var(--ink);font-weight:600}
+.mxcap{font-size:12.5px;color:var(--muted);margin-top:6px}
+.eq{overflow-x:auto;padding:4px 0}
+.eqbox{background:var(--bg);border-radius:10px;padding:12px 14px;overflow-x:auto}
+.eqbox+.eqbox{margin-top:8px}
+.eqbox .tag{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.note{font-size:13px;color:var(--muted);border-left:2px solid var(--accent);padding-left:10px}
+.fn{font-size:12.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px}
+.fn b{color:var(--ink);font-weight:600}
+.fn p+p{margin-top:5px}
+mjx-container[display="true"]{margin:4px 0 !important}
+
+/* ---------- combine + gates ---------- */
+.combine .wrap{padding-block:24px 56px;display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px 26px;min-width:0}
+.panel.wide{grid-column:1 / -1}
+.panel h3{font-size:18px;font-weight:700}
+.panel p{color:var(--muted);font-size:14px;margin-top:6px}
+.panel table{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px}
+.panel th{text-align:left;font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500;padding:0 8px 8px 0}
+.panel td{padding:7px 8px 7px 0;border-top:1px solid var(--line);vertical-align:top}
+.panel td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.bins{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:3px;margin-top:8px}
+.bins span{font-family:var(--mono);font-size:11px;text-align:center;background:var(--accent-soft);color:var(--ink);border-radius:5px;padding:6px 2px;line-height:1.2}
+.gates{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:8px}
+.gates li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;font-size:14px}
+.gates .g{font-family:var(--mono);font-size:12px;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:3px 7px;margin-top:2px}
+.grades{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:14px}
+.grades div{border-radius:6px;padding:8px 8px;font-size:12px;line-height:1.3;background:var(--accent-soft);color:var(--ink)}
+.grades b{display:block;font-family:var(--mono);font-size:12px}
+.grades .lo{background:transparent;border:1px dashed var(--line)}
+.tbd{color:var(--bad);font-weight:600}
+footer .wrap{padding-block:18px 40px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+
+@media (max-width:900px){
+  .hero .wrap{grid-template-columns:1fr;gap:28px;padding-block:40px 36px}
+  .rules4{grid-template-columns:1fr 1fr}
+  .cols,.combine .wrap{grid-template-columns:1fr}
+  .facts{grid-template-columns:1fr 1fr}
+  .grades{grid-template-columns:repeat(2,1fr)}
+  .bins{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
+@media (max-width:560px){ .rules4{grid-template-columns:1fr} .card{padding:20px 16px} }
+@media (prefers-reduced-motion:no-preference){
+  .scorebox{animation:rise .5s ease-out both}
+  @keyframes rise{from{transform:translateY(8px);opacity:.6}to{transform:none;opacity:1}}
+}
+@page{size:1280px 1560px;margin:0}
+@media print{
+  html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .card,.panel{break-inside:avoid}
+  .stack .card{break-before:page}
+  .combine{break-before:page}
+  .cards .wrap{padding-block:32px 8px}
+  .hero .wrap{grid-template-columns:minmax(260px,380px) 1fr !important;gap:40px !important}
+  .rules4{grid-template-columns:repeat(4,minmax(0,1fr)) !important}
+  .cols{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) !important}
+  .combine .wrap{grid-template-columns:1fr 1fr !important}
+  .facts{grid-template-columns:repeat(3,1fr) !important}
+  .grades{grid-template-columns:repeat(5,1fr) !important}
+  .bins{grid-template-columns:repeat(10,minmax(0,1fr)) !important}
+  .wrap{max-width:1120px}
+  .scorebox{animation:none}
+}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],macros:{
+  Sup:['S^{\\uparrow}\\!\\left(#1;\\,#2\\right)',2],
+  Sdn:['S^{\\downarrow}\\!\\left(#1;\\,#2\\right)',2],
+  Slog:['S^{\\log}\\!\\left(#1;\\,#2\\right)',2],
+  Szero:['S^{0}\\!\\left(#1\\right)',1]}},
+  svg:{fontCache:'global'},options:{renderActions:{addMenu:[]}}};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js" async></script>
+</head>
+<body>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="wrap">
+    <div class="scorebox">
+      <div class="big">100</div>
+      <div class="unit">PRBS · points</div>
+      <p class="sub">The score a model earns when every physics target is met. One number per trained model, 0 to 100.</p>
+      <div class="scale" aria-label="Grading bands">
+        <div class="bar"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="ticks"><span>0</span><span>60</span><span>70</span><span>80</span><span>90</span></div>
+      </div>
+    </div>
+    <div>
+      <p class="eyebrow">Particle Reconstruction Benchmark Score</p>
+      <h1>One score for the whole reconstruction chain.</h1>
+      <p class="lead">PRBS grades a trained model against fixed physics targets on clustering, energy, position and particle identification. The four benchmarks carry equal weight, every metric is capped at its target, and every plot uses one standard binning so results from different groups can be overlaid directly.</p>
+      <div class="formula">\[ S_{\mathrm{PRBS}} = \tfrac{1}{4}\left(S_{\mathrm{clu}} + S_{E} + S_{\mathrm{pos}} + S_{\mathrm{cls}}\right) \]</div>
+      <div class="facts">
+        <div><b>4 × 25 %</b><span>benchmarks, equal weight</span></div>
+        <div><b>10 E × 10 η</b><span>one standard binning for every plot and score<sup>*</sup></span></div>
+        <div><b>One fit only</b><span>σ<sub>E</sub>/E = A + B/√E + C/E; everything else is scored bin by bin</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= RULE STRIP ================= -->
+<section class="rule">
+  <div class="wrap">
+    <h2>Four scoring rules cover every metric</h2>
+    <p class="lead2">Each measured value \(x\) is turned into a 0–100 score. Where a target \(t\) exists, meeting it gives 100 and nothing extra is earned beyond it. Every percentage below is a share of the benchmark's own 100 points.</p>
+    <div class="rules4">
+      <div>
+        <p class="eyebrow">Higher is better</p>
+        <div class="eq">\[ \Sup{x}{t} = 100\,\min\!\left(1,\tfrac{x}{t}\right) \]</div>
+        <p>efficiency, purity, accuracy, background rejection</p>
+      </div>
+      <div>
+        <p class="eyebrow">Lower is better</p>
+        <div class="eq">\[ \Sdn{x}{t} = 100\,\min\!\left(1,\tfrac{t}{x}\right) \]</div>
+        <p>resolution σ or B, position |μ|, split and merge rates</p>
+      </div>
+      <div>
+        <p class="eyebrow">Rejection factor</p>
+        <div class="eq">\[ \Slog{R}{R^{t}} = 100\,\min\!\left(1,\tfrac{\log_{10}R}{\log_{10}R^{t}}\right) \]</div>
+        <p>π, non-EM and single-γ rejection; log scale because R spans decades</p>
+      </div>
+      <div>
+        <p class="eyebrow">Distance from ideal 0</p>
+        <div class="eq">\[ \Szero{x} = 100\,\max\!\left(0,\,1-|x|\right) \]</div>
+        <p>energy bias μ (−1 scores 0), cluster-count deviation</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOUR BENCHMARKS ================= -->
+<section class="cards">
+  <div class="wrap">
+    <h2 class="section">Four benchmarks, one quarter each</h2>
+    <p class="intro">Every card follows the same order: what the quantity is, which samples are used, how the benchmark's 100 points are split, and the score formula. The DIS sample is always one sample: charged-current e + p at 10 × 100 GeV with 100 &lt; Q² &lt; 1000 GeV². The four particle-ID cases are <b>EM</b> (e⁻, e⁺, γ), <b>non-EM</b> (all other particles), <b>γ only</b> and <b>electron only</b>.</p>
+
+    <div class="stack">
+
+      <!-- 1 CLUSTERING -->
+      <article class="card">
+        <div class="head">
+          <div><p class="num">BENCHMARK 1</p><h3>Clustering</h3></div>
+          <span class="weight">25 % of PRBS</span>
+        </div>
+        <div class="cols">
+          <div class="col">
+            <div class="defbox">
+              <div class="lbl">Definition</div>
+              <ul>
+                <li>Clustering groups detector hits that came from the same particle.</li>
+                <li>A cluster is matched to a truth particle when more than 50 % of its hits come from that particle; that particle is the cluster's dominant particle.</li>
+              </ul>
+            </div>
+            <div class="block">
+              <div class="lbl">Dataset</div>
+              <div class="chips">
+                <span class="chip dis">DIS · CC e + p, 10 × 100 GeV, Q² 100–1000 GeV² <span class="w">100 %</span></span>
+              </div>
+            </div>
+            <div class="block">
+              <div class="lbl">Metric definitions</div>
+              <dl class="mdefs">
+                <div><dt>Count deviation \(D\)</dt><dd>per event, \(|N_{\mathrm{reco}}-N_{\mathrm{true}}|/N_{\mathrm{true}}\), averaged over events; the distance of the \(N_{\mathrm{reco}}\) vs \(N_{\mathrm{true}}\) 2D plot from \(y=x\). A cluster counts in the class of its dominant particle.</dd></div>
+                <div><dt>Efficiency \(\varepsilon\)</dt><dd>fraction of truth particles that have a matched cluster</dd></div>
+                <div><dt>Purity \(\pi\)</dt><dd>fraction of a cluster's hits that belong to its dominant particle, averaged over clusters</dd></div>
+                <div><dt>Background rejection \(R_{\mathrm{bkg}}\)</dt><dd>fraction of background (noise) hits left out of every cluster</dd></div>
+                <div><dt>Accuracy \(a\)</dt><dd>fraction of all hits given the correct label: signal hits in their own particle's cluster, background hits unclustered</dd></div>
+                <div><dt>Split rate \(f_{\mathrm{split}}\)</dt><dd>fraction of truth particles whose hits are shared by two or more clusters, each holding at least 10 % of the particle's hits</dd></div>
+                <div><dt>Merge rate \(f_{\mathrm{merge}}\)</dt><dd>fraction of truth particles whose largest share of hits sits in a cluster dominated by a different particle</dd></div>
+              </dl>
+            </div>
+          </div>
+          <div class="col">
+            <div class="block">
+              <div class="lbl">How the 100 points are split</div>
+              <table class="wt">
+                <tr class="part"><td>Event level: \(N_{\mathrm{reco}}\) vs \(N_{\mathrm{true}}\)<span class="def">count deviation \(D\) from \(y=x\), per PID case</span></td><td class="w">20 %</td></tr>
+                <tr class="sub"><td>EM · non-EM · γ · electron</td><td class="w">4 × 5 %</td></tr>
+                <tr class="part"><td>Binned in truth-particle energy<sup>*</sup><span class="def">6 metrics × 4 PID cases, scored bin by bin</span></td><td class="w">40 %</td></tr>
+                <tr class="sub"><td>EM · non-EM · γ · electron</td><td class="w">4 × 10 %</td></tr>
+                <tr class="part"><td>Binned in truth-particle η<sup>*</sup><span class="def">same 6 metrics × 4 PID cases</span></td><td class="w">40 %</td></tr>
+                <tr class="sub"><td>EM · non-EM · γ · electron</td><td class="w">4 × 10 %</td></tr>
+                <tr class="total"><td>Clustering total</td><td class="w">100 %</td></tr>
+              </table>
+            </div>
+            <div class="block">
+              <div class="lbl">Inside one binning (E or <span style="text-transform:none">η</span>)</div>
+              <table class="mx">
+                <tr><th>Metric</th><th>EM</th><th>non-EM</th><th>γ</th><th>e</th></tr>
+                <tr><td>Efficiency ε</td><td>2 %</td><td>2 %</td><td>2 %</td><td>2 %</td></tr>
+                <tr><td>Purity π</td><td>2 %</td><td>2 %</td><td>2 %</td><td>2 %</td></tr>
+                <tr><td>Bkg rejection R<sub>bkg</sub></td><td>2 %</td><td>2 %</td><td>2 %</td><td>2 %</td></tr>
+                <tr><td>Accuracy a</td><td>2 %</td><td>2 %</td><td>2 %</td><td>2 %</td></tr>
+                <tr><td>Split rate</td><td>1 %</td><td>1 %</td><td>1 %</td><td>1 %</td></tr>
+                <tr><td>Merge rate</td><td>1 %</td><td>1 %</td><td>1 %</td><td>1 %</td></tr>
+                <tr class="sum"><td>Per PID case</td><td>10 %</td><td>10 %</td><td>10 %</td><td>10 %</td></tr>
+              </table>
+              <p class="mxcap">Each cell is the mean of its 10 bin scores. Background hits carry no truth label, so they are binned and classed by the nearest truth particle.</p>
+            </div>
+            <div class="block">
+              <div class="lbl">Score</div>
+              <div class="eqbox">
+                \[ S_{\mathrm{clu}} = \sum_{c}\Big[\,0.05\,\Szero{D_c} + \sum_{v\in\{E,\eta\}}\overline{S}_{c,v}\Big],\quad c\in\{\mathrm{EM},\mathrm{nEM},\gamma,e\} \]
+                \[ \begin{aligned}\overline{S}_{c,v} = \frac{1}{10}\sum_{b=1}^{10}\Big[\,&0.02\big(\Sup{\varepsilon}{\varepsilon^{t}}+\Sup{\pi}{\pi^{t}}\big)\\ +\,&0.02\big(\Sup{R_{\mathrm{bkg}}}{R^{t}}+\Sup{a}{a^{t}}\big)\\ +\,&0.01\big(\Sdn{f_{\mathrm{split}}}{f^{t}}+\Sdn{f_{\mathrm{merge}}}{f^{t}}\big)\Big]_{c,v,b}\end{aligned} \]
+              </div>
+            </div>
+            <p class="fn"><b>*</b> Standard energy and η binning, defined under Benchmark 2 and in the binning panel below.</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- 2 ENERGY -->
+      <article class="card">
+        <div class="head">
+          <div><p class="num">BENCHMARK 2</p><h3>Energy reconstruction</h3></div>
+          <span class="weight">25 % of PRBS</span>
+        </div>
+        <div class="cols">
+          <div class="col">
+            <div class="defbox">
+              <div class="lbl">Definition</div>
+              <ul>
+                <li>For every reconstructed cluster matched to a truth particle, the relative residual is \(r = (E_{\mathrm{reco}}-E_{\mathrm{true}})/E_{\mathrm{true}}\).</li>
+                <li>Energy resolution \(\sigma_E/E\) is the width of the \(r\) distribution in a bin (σ₆₈, half-width of its central 68.3 %). The bias \(\mu\) is its centre (median); \(\mu=0\) is unbiased, \(\mu=-1\) means no energy reconstructed.</li>
+                <li>The resolution versus energy follows \(\sigma_E/E = A + B/\sqrt{E} + C/E\): \(B\) is the stochastic term, \(A\) the constant term, \(C\) the noise term.</li>
+              </ul>
+            </div>
+            <div class="block">
+              <div class="lbl">Datasets</div>
+              <div class="chips">
+                <span class="chip sp">Multi-particle γ + e⁻ <span class="w">20 %</span></span>
+                <span class="chip sp">Single γ <span class="w">10 %</span></span>
+                <span class="chip sp">Single e⁻ <span class="w">10 %</span></span>
+                <span class="chip dis">DIS · CC e + p, 10 × 100 GeV, Q² 100–1000 GeV² <span class="w">60 %</span></span>
+              </div>
+            </div>
+            <div class="block">
+              <div class="lbl">Metric definitions</div>
+              <dl class="mdefs">
+                <div><dt>Stochastic term \(B\)</dt><dd>from the fit of \(\sigma_E/E\) over the 10 energy bins. Design requirement \(B \le 11\,\%/\sqrt{E}\); above is penalised, lower is better and is reported, the score is capped at 100.</dd></div>
+                <div><dt>η-bin resolution \(B_k\)</dt><dd>no fit in η, since the η dependence has no expected shape (it may be flat). In each η bin \(k\), \(B_k = \sigma_{68}\big(r\sqrt{E_{\mathrm{true}}}\big)\): the resolution scaled to 1 GeV, so it is compared directly with the same 11 % design value</dd></div>
+                <div><dt>Bias \(\mu_b\)</dt><dd>median of \(r\) in bin \(b\); expected to grow at high energy, so it is checked in every bin</dd></div>
+                <div><dt>Efficiency \(\varepsilon_E\)</dt><dd>fraction of true deposited energy contained in matched clusters</dd></div>
+                <div><dt>Purity \(\pi_E\)</dt><dd>fraction of reconstructed cluster energy that belongs to the matched particle</dd></div>
+                <div><dt>Background rejection \(R_E\)</dt><dd>fraction of background (noise) energy kept out of clusters</dd></div>
+                <div><dt>Accuracy \(a_E\)</dt><dd>fraction of matched clusters with \(|r|\) inside a frozen window \(\delta\) <span class="tbd">(TBD)</span></dd></div>
+              </dl>
+            </div>
+          </div>
+          <div class="col">
+            <div class="block">
+              <div class="lbl">How the 100 points are split · per dataset</div>
+              <table class="wt">
+                <tr class="part"><td>(a) Resolution fit, stochastic term \(B\)<span class="def">per PID case: half from the fit of \(\sigma_E/E\) over the 10 E bins, half from the 10 η bins scored bin by bin (no fit)</span></td><td class="w">50 %</td></tr>
+                <tr class="sub"><td>EM</td><td class="w">25 %</td></tr>
+                <tr class="sub"><td>γ</td><td class="w">10 %</td></tr>
+                <tr class="sub"><td>electron</td><td class="w">10 %</td></tr>
+                <tr class="sub"><td>HAD (non-EM)</td><td class="w">5 %</td></tr>
+                <tr class="part"><td>(b) Bias \(\mu\), bin by bin<span class="def">10 E bins + 10 η bins per PID case, \(S^{0}(\mu_b)\) in each</span></td><td class="w">40 %</td></tr>
+                <tr class="sub"><td>EM · 20 bins × 1 %</td><td class="w">20 %</td></tr>
+                <tr class="sub"><td>γ · 20 bins × 0.5 %</td><td class="w">10 %</td></tr>
+                <tr class="sub"><td>electron · 20 bins × 0.5 %</td><td class="w">10 %</td></tr>
+                <tr class="part"><td>(c) Inclusive energy-flow metrics</td><td class="w">10 %</td></tr>
+                <tr class="sub"><td>efficiency · accuracy · bkg rejection · purity</td><td class="w">4 × 2.5 %</td></tr>
+                <tr class="total"><td>Energy total</td><td class="w">100 %</td></tr>
+              </table>
+            </div>
+            <div class="block">
+              <div class="lbl">Score</div>
+              <div class="eqbox"><div class="tag">per dataset <span style="text-transform:none">d</span></div>
+                \[ \begin{aligned} S_{E}^{d} =\;& \sum_{c} w^{a}_{c}\,\tfrac12\Big[\Sdn{B_c}{0.11} + \tfrac{1}{10}\textstyle\sum_{k=1}^{10}\Sdn{B_{c,k}}{0.11}\Big] && \text{(a)}\\ +\;& \sum_{c}\sum_{b=1}^{20} w^{b}_{c}\,\Szero{\mu_{c,b}} && \text{(b)}\\ +\;& 0.025\!\!\sum_{m\in\{\varepsilon_E,\,a_E,\,R_E,\,\pi_E\}}\!\!\Sup{m}{m^{t}} && \text{(c)}\end{aligned} \]
+                <p class="mxcap">\(w^{a}\) = (EM 0.25, γ 0.10, e 0.10, HAD 0.05); \(w^{b}\) per bin = (EM 0.01, γ 0.005, e 0.005). A PID case absent from a sample (e.g. HAD in single γ) is dropped and the remaining weights are rescaled to 100 %.</p>
+              </div>
+              <div class="eqbox"><div class="tag">benchmark</div>
+                \[ S_{E} = 0.20\,S_{E}^{\gamma+e} + 0.10\,S_{E}^{\gamma} + 0.10\,S_{E}^{e} + 0.60\,S_{E}^{\mathrm{DIS}} \]
+              </div>
+            </div>
+            <div class="fn">
+              <p><b>* Energy bins (10), 10⁻³ to 10² GeV, drawn on a log-E axis:</b> &lt; 0.1 · 0.1–0.5 · 0.5–1 · 1–1.5 · 1.5–2 · 2–4 · 4–7 · 7–10 · 10–20 · &gt; 20 GeV.</p>
+              <p><b>* η bins (10):</b> equal width 0.3 over −1.5 &lt; η &lt; 1.5.</p>
+              <p>These bins are used by every benchmark. The \(A + B/\sqrt{E} + C/E\) fit, over energy bins only, is the only fit in PRBS; A, B, C are quoted as the shape of the resolution curve and only B is scored. Resolution and bias vs η are scored bin by bin.</p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 3 POSITION -->
+      <article class="card">
+        <div class="head">
+          <div><p class="num">BENCHMARK 3</p><h3>Position reconstruction</h3></div>
+          <span class="weight">25 % of PRBS</span>
+        </div>
+        <div class="cols">
+          <div class="col">
+            <div class="defbox">
+              <div class="lbl">Definition</div>
+              <ul>
+                <li>Position reconstruction estimates where a particle hits the calorimeter and its direction, from the cluster.</li>
+                <li>For each matched cluster and coordinate \(q\in\{x,y,z,\eta,\phi\}\), the residual is \(\Delta q = q_{\mathrm{reco}}-q_{\mathrm{true}}\), with the truth point at the calorimeter impact point and Δφ wrapped into [−π, π].</li>
+                <li>Position resolution \(\sigma_q\) is the width of Δq in a bin (σ₆₈); position bias \(\mu_q\) is its centre (median).</li>
+              </ul>
+            </div>
+            <div class="block">
+              <div class="lbl">Dataset</div>
+              <div class="chips">
+                <span class="chip dis">DIS · CC e + p, 10 × 100 GeV, Q² 100–1000 GeV² <span class="w">100 %</span></span>
+              </div>
+            </div>
+            <p class="note">Also drawn: predicted vs true 2D histograms for all five coordinates, and σ<sub>q</sub>, μ<sub>q</sub> vs E and η in the standard bins.</p>
+          </div>
+          <div class="col">
+            <div class="block">
+              <div class="lbl">How the 100 points are split</div>
+              <table class="wt">
+                <tr class="part"><td>EM (e⁻, e⁺, γ)</td><td class="w">50 %</td></tr>
+                <tr class="sub"><td>Resolution \(\sigma_q\), as low as possible</td><td class="w">30 %</td></tr>
+                <tr class="sub"><td>Bias \(|\mu_q|\), as low as possible</td><td class="w">20 %</td></tr>
+                <tr class="part"><td>non-EM (all other particles)</td><td class="w">50 %</td></tr>
+                <tr class="sub"><td>Resolution \(\sigma_q\)</td><td class="w">30 %</td></tr>
+                <tr class="sub"><td>Bias \(|\mu_q|\)</td><td class="w">20 %</td></tr>
+                <tr class="total"><td>Position total</td><td class="w">100 %</td></tr>
+              </table>
+              <p class="mxcap">Within each case: resolution 60 %, bias 40 %. Each is averaged over the five coordinates and over the 10 E and 10 η bins<sup>*</sup> (E and η halves equal).</p>
+            </div>
+            <div class="block">
+              <div class="lbl">Score</div>
+              <div class="eqbox">
+                \[ S_{\mathrm{pos}} = \sum_{c\in\{\mathrm{EM},\mathrm{nEM}\}} 0.5\Big[\,0.6\,\overline{\Sdn{\sigma_{q}}{\sigma^{t}_{q,c}}} + 0.4\,\overline{\Sdn{|\mu_{q}|}{\mu^{t}_{q,c}}}\,\Big] \]
+                <p class="mxcap">The bar is the mean over \(q\in\{x,y,z,\eta,\phi\}\) and over the 20 bins (10 E, 10 η) of case \(c\).</p>
+              </div>
+            </div>
+            <p class="fn"><b>*</b> Standard energy and η binning, defined under Benchmark 2.</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- 4 CLASSIFICATION -->
+      <article class="card">
+        <div class="head">
+          <div><p class="num">BENCHMARK 4</p><h3>Particle classification</h3></div>
+          <span class="weight">25 % of PRBS</span>
+        </div>
+        <div class="cols">
+          <div class="col">
+            <div class="defbox">
+              <div class="lbl">Definition</div>
+              <ul>
+                <li>Classification assigns each cluster a particle species. PRBS scores three binary separations, each with a signal class S and a background class B: <b>EM vs non-EM</b> (S = EM), <b>e⁻ vs π⁻</b> (S = e⁻), <b>π⁰ vs γ</b> (S = π⁰, so the π⁰ sample is as pure as possible).</li>
+                <li>A rejection factor \(R = N_{B}/N_{B\to S}\) is the number of background clusters divided by those mis-identified as signal, at a fixed signal efficiency of 95 %. \(R = 10^{2}\) means 1 % of the background leaks into the signal sample.</li>
+              </ul>
+            </div>
+            <div class="block">
+              <div class="lbl">Datasets</div>
+              <div class="chips">
+                <span class="chip sp">Single e⁻ / π⁻ <span class="w">20 %</span></span>
+                <span class="chip sp">Single π⁰ / γ <span class="w">20 %</span></span>
+                <span class="chip dis">DIS · CC e + p, 10 × 100 GeV, Q² 100–1000 GeV² <span class="w">60 %</span></span>
+              </div>
+            </div>
+            <div class="block">
+              <div class="lbl">Metric definitions</div>
+              <dl class="mdefs">
+                <div><dt>Confusion matrix</dt><dd>at the model's own decision; TP, FP, TN, FN with respect to the signal class S</dd></div>
+                <div><dt>Efficiency</dt><dd>TP / (TP + FN)</dd></div>
+                <div><dt>Purity</dt><dd>TP / (TP + FP)</dd></div>
+                <div><dt>Bkg rejection</dt><dd>TN / (TN + FP)</dd></div>
+                <div><dt>Accuracy</dt><dd>(TP + TN) / all</dd></div>
+                <div><dt>Pion rejection \(R_{\pi}\)</dt><dd>in the EM calorimeter: cut on the classifier output (the role E/p and shower shape play in a cut-based analysis) so that 95 % of true e⁻ pass, then \(R_\pi = N_{\pi^-}/N_{\pi^-\to e}\). Design baseline \(R_\pi = 10^{2}\) (mis-ID \(10^{-2}\)); higher is better.</dd></div>
+                <div><dt>Non-EM rejection \(R_{\mathrm{nEM}}\)</dt><dd>same, non-EM clusters passing a cut at 95 % EM efficiency; target \(10^{2}\)</dd></div>
+                <div><dt>Single-γ rejection \(R_{\gamma}\)</dt><dd>same, single photons passing a cut at 95 % π⁰ efficiency, i.e. γ contamination of the π⁰ sample; target \(10^{2}\)</dd></div>
+              </dl>
+            </div>
+          </div>
+          <div class="col">
+            <div class="block">
+              <div class="lbl">Task weights</div>
+              <table class="wt">
+                <tr class="part"><td>EM vs non-EM</td><td class="w">30 %</td></tr>
+                <tr class="part"><td>e⁻ vs π⁻</td><td class="w">50 %</td></tr>
+                <tr class="part"><td>π⁰ vs γ</td><td class="w">20 %</td></tr>
+                <tr class="total"><td>Classification total</td><td class="w">100 %</td></tr>
+              </table>
+            </div>
+            <div class="block">
+              <div class="lbl">Inside one task · 100 %</div>
+              <table class="wt">
+                <tr class="part"><td>Confusion-matrix metrics, inclusive</td><td class="w">40 %</td></tr>
+                <tr class="sub"><td>efficiency · accuracy · bkg rejection · purity</td><td class="w">4 × 10 %</td></tr>
+                <tr class="part"><td>Rejection factor vs energy<sup>*</sup><span class="def">\(R_\pi\), \(R_{\mathrm{nEM}}\) or \(R_\gamma\) for the task</span></td><td class="w">30 %</td></tr>
+                <tr class="sub"><td>10 bins × 3 %</td><td class="w">30 %</td></tr>
+                <tr class="part"><td>Rejection factor vs η<sup>*</sup></td><td class="w">30 %</td></tr>
+                <tr class="sub"><td>10 bins × 3 %</td><td class="w">30 %</td></tr>
+              </table>
+            </div>
+            <div class="block">
+              <div class="lbl">Score</div>
+              <div class="eqbox"><div class="tag">per task <span style="text-transform:none">τ</span>, per dataset <span style="text-transform:none">d</span></div>
+                \[ \begin{aligned} S_{\tau} =\;& 0.10\big(\Sup{\varepsilon}{\varepsilon^{t}}+\Sup{a}{a^{t}}+\Sup{R_{\mathrm{bkg}}}{R^{t}}+\Sup{p}{p^{t}}\big)\\ +\;& 0.03\sum_{b=1}^{10}\Slog{R_{b}^{E}}{10^{2}} + 0.03\sum_{b=1}^{10}\Slog{R_{b}^{\eta}}{10^{2}}\end{aligned} \]
+              </div>
+              <div class="eqbox"><div class="tag">benchmark</div>
+                \[ S_{\mathrm{cls}}^{d} = \frac{\sum_{\tau\in d} w_\tau S_\tau}{\sum_{\tau\in d} w_\tau} \]
+                \[ S_{\mathrm{cls}} = 0.20\,S_{\mathrm{cls}}^{e\pi} + 0.20\,S_{\mathrm{cls}}^{\pi^0\gamma} + 0.60\,S_{\mathrm{cls}}^{\mathrm{DIS}} \]
+                <p class="mxcap">\(w_\tau\) = (EM/non-EM 0.3, e/π 0.5, π⁰/γ 0.2). Each dataset scores only the tasks it contains: e⁻/π⁻ gives EM/non-EM and e/π; π⁰/γ gives EM/non-EM and π⁰/γ; DIS gives all three.</p>
+              </div>
+            </div>
+            <p class="fn"><b>*</b> Standard energy and η binning, defined under Benchmark 2.</p>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= COMBINE + GATES ================= -->
+<section class="combine">
+  <div class="wrap">
+    <div class="panel wide">
+      <h3>Standard binning and plotting</h3>
+      <p>Every group draws every plot in the same bins, so curves from different models overlay without rebinning. The only fit anywhere is the energy-resolution fit \(\sigma_E/E = A + B/\sqrt{E} + C/E\); its A, B, C summarise the shape of the curve. Every other quantity is quoted, and scored, bin by bin.</p>
+      <p style="margin-top:12px"><b style="color:var(--ink)">Energy</b> · 10 bins, 10⁻³ to 10² GeV, log-E axis</p>
+      <div class="bins"><span>&lt; 0.1</span><span>0.1–0.5</span><span>0.5–1</span><span>1–1.5</span><span>1.5–2</span><span>2–4</span><span>4–7</span><span>7–10</span><span>10–20</span><span>&gt; 20</span></div>
+      <p style="margin-top:12px"><b style="color:var(--ink)">η</b> · 10 bins of width 0.3</p>
+      <div class="bins"><span>−1.5</span><span>−1.2</span><span>−0.9</span><span>−0.6</span><span>−0.3</span><span>0.0</span><span>0.3</span><span>0.6</span><span>0.9</span><span>1.2</span></div>
+      <p class="mxcap">η cells show each bin's lower edge; the last bin ends at 1.5. Energy in GeV.</p>
+    </div>
+    <div class="panel">
+      <h3>How single-particle and DIS samples are weighted</h3>
+      <p>Single-particle samples test the intrinsic response with clean truth. DIS is the physics environment the detector is built for, so it carries the larger share wherever both exist.</p>
+      <table>
+        <tr><th>Benchmark</th><th>Single particle</th><th>DIS</th></tr>
+        <tr><td>Clustering</td><td class="num">—</td><td class="num">100 %</td></tr>
+        <tr><td>Energy</td><td class="num">40 % (γ+e⁻ 20, γ 10, e⁻ 10)</td><td class="num">60 %</td></tr>
+        <tr><td>Position</td><td class="num">—</td><td class="num">100 %</td></tr>
+        <tr><td>Classification</td><td class="num">40 % (e⁻/π⁻ 20, π⁰/γ 20)</td><td class="num">60 %</td></tr>
+      </table>
+      <p style="margin-top:14px">Every score is reported with a bootstrap uncertainty, \(S \pm \delta S\). Bins below the minimum number of entries are flagged and drop out of the average.</p>
+    </div>
+    <div class="panel">
+      <h3>Acceptance gates and grades</h3>
+      <p>The score ranks models. The gates decide whether a model is acceptable at all; a model failing any gate is labelled FAIL regardless of its PRBS.</p>
+      <ul class="gates">
+        <li><span class="g">G1</span><span>Inclusive e⁻/π⁻: pion rejection \(R_{\pi}\ge 10^{2}\) at 95 % electron efficiency.</span></li>
+        <li><span class="g">G2</span><span>Every benchmark scores at least 60 on its own.</span></li>
+        <li><span class="g">G3</span><span>Inclusive DIS clustering efficiency above a fixed floor <span class="tbd">(TBD)</span>.</span></li>
+      </ul>
+      <div class="grades">
+        <div><b>90–100</b>Excellent</div>
+        <div><b>80–89</b>Very good</div>
+        <div><b>70–79</b>Good</div>
+        <div><b>60–69</b>Fair</div>
+        <div class="lo"><b>&lt; 60</b>Needs improvement</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Fixed numbers: stochastic-term design B ≤ 11 %, rejection baseline 10² at 95 % signal efficiency, split threshold 10 %. Still to freeze before any model comparison: \(\varepsilon^{t}, \pi^{t}, R^{t}, a^{t}, p^{t}, f^{t}\), the energy accuracy window \(\delta\), \(\sigma^{t}_{q,c}, \mu^{t}_{q,c}\), and the minimum entries per bin. PRBS draft v0.3.
+  </div>
+</footer>
+</body>
+</html>
